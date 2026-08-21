@@ -1,0 +1,14 @@
+services:
+  banking4:
+    image: ${BANKING4_IMAGE:?Set BANKING4_IMAGE in .env}
+    container_name: banking4-web
+    restart: unless-stopped
+    ports:
+      - "5800:5800"
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      WEB_AUTHENTICATION_USERNAME: ${WEB_AUTHENTICATION_USERNAME:?Set WEB_AUTHENTICATION_USERNAME in .env}
+      WEB_AUTHENTICATION_PASSWORD: ${WEB_AUTHENTICATION_PASSWORD:?Set WEB_AUTHENTICATION_PASSWORD in .env}
+    volumes:
+      - ./config:/config
+

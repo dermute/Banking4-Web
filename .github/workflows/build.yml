@@ -1,0 +1,159 @@
+name: Build and publish
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  schedule:
+    # Check each day for a changed Banking4 installer or base-image manifest.
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Build even if the tracked inputs are unchanged
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: ghcr.io
+  BASE_IMAGE: jlesage/baseimage-gui:ubuntu-24.04-v4
+  BASE_IMAGE_ID_LABEL: io.github.banking4-web.base-image-id
+  INSTALLER_ID_LABEL: io.github.banking4-web.installer-id
+  INSTALLER_URL: https://subsembly.com/download/TopBanking4Setup.exe
+
+jobs:
+  check:
+    name: Resolve tracked inputs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      installer_id: ${{ steps.installer.outputs.build_id }}
+      base_image_id: ${{ steps.base.outputs.build_id }}
+      changed: ${{ steps.decide.outputs.changed }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check shell scripts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          find . -type f -name '*.sh' -print0 | xargs -0 shellcheck --shell=sh
+
+      - name: Resolve Banking4 installer identity
+        id: installer
+        run: |
+          set -euo pipefail
+          headers="$(curl --fail --silent --show-error --location --head --retry 3 "${INSTALLER_URL}" | tr -d '\r')"
+          etag="$(printf '%s\n' "${headers}" | awk -F': ' 'tolower($1) == "etag" {value=$2} END {print value}')"
+          modified="$(printf '%s\n' "${headers}" | awk -F': ' 'tolower($1) == "last-modified" {value=$2} END {print value}')"
+          length="$(printf '%s\n' "${headers}" | awk -F': ' ' 'tolower($1) == "content-length" {value=$2} END {print value}')"
+          test -n "${etag}" && test -n "${modified}" && test -n "${length}"
+          build_id="etag=${etag};last-modified=${modified};content-length=${length}"
+          echo "Installer: ${build_id}"
+          echo "build_id=${build_id}" >> "${GITHUB_OUTPUT}"
+
+      - name: Resolve base image manifest
+        id: base
+        run: |
+          set -euo pipefail
+          digest="$(docker buildx imagetools inspect "${BASE_IMAGE}" --format '{{ json .Manifest }}' | jq -er '
+            [.manifests[] | select(.platform.os == "linux" and .platform.architecture == "amd64") | .digest]
+            | if length == 1 then .[0] else error("base image has no unique linux/amd64 manifest") end
+          ')"
+          echo "Base image: ${digest}"
+          echo "build_id=${digest}" >> "${GITHUB_OUTPUT}"
+
+      - name: Read published image labels
+        id: published
+        run: |
+          set -uo pipefail
+          image="${REGISTRY}/${GITHUB_REPOSITORY,,}:latest"
+          read_label() {
+            docker buildx imagetools inspect "${image}" --format '{{ json .Image }}' 2>/dev/null \
+              | jq -r --arg label "$1" '[.[].config.Labels[$label] // ""] | unique | if length == 1 then .[0] else "" end' \
+              || true
+          }
+          echo "installer_id=$(read_label "${INSTALLER_ID_LABEL}")" >> "${GITHUB_OUTPUT}"
+          echo "base_image_id=$(read_label "${BASE_IMAGE_ID_LABEL}")" >> "${GITHUB_OUTPUT}"
+
+      - name: Decide whether to build
+        id: decide
+        env:
+          CURRENT_INSTALLER: ${{ steps.installer.outputs.build_id }}
+          PUBLISHED_INSTALLER: ${{ steps.published.outputs.installer_id }}
+          CURRENT_BASE: ${{ steps.base.outputs.build_id }}
+          PUBLISHED_BASE: ${{ steps.published.outputs.base_image_id }}
+          EVENT_NAME: ${{ github.event_name }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          changed=true
+          reason="repository event"
+          if [ "${FORCE:-false}" = true ]; then
+            reason="manual build was forced"
+          elif [ "${EVENT_NAME}" = schedule ]; then
+            if [ -z "${PUBLISHED_INSTALLER}" ] || [ -z "${PUBLISHED_BASE}" ]; then
+              reason="published image has no tracked-input labels"
+            elif [ "${CURRENT_INSTALLER}" != "${PUBLISHED_INSTALLER}" ]; then
+              reason="Banking4 installer changed"
+            elif [ "${CURRENT_BASE}" != "${PUBLISHED_BASE}" ]; then
+              reason="base image changed"
+            else
+              changed=false
+              reason="tracked inputs are unchanged"
+            fi
+          fi
+          echo "changed=${changed}" >> "${GITHUB_OUTPUT}"
+          echo "### $([ "${changed}" = true ] && echo Building || echo Skipping) — ${reason}" >> "${GITHUB_STEP_SUMMARY}"
+
+  build:
+    name: Build and publish
+    needs: check
+    if: needs.check.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=tag
+            type=sha,format=short
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            ${{ env.INSTALLER_ID_LABEL }}=${{ needs.check.outputs.installer_id }}
+            ${{ env.BASE_IMAGE_ID_LABEL }}=${{ needs.check.outputs.base_image_id }}
+          build-args: |
+            BANKING4_INSTALLER_ID=${{ needs.check.outputs.installer_id }}
+            DOCKER_IMAGE_VERSION=${{ steps.meta.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
