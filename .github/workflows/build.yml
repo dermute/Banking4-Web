@@ -51,7 +51,7 @@ jobs:
           headers="$(curl --fail --silent --show-error --location --head --retry 3 "${INSTALLER_URL}" | tr -d '\r')"
           etag="$(printf '%s\n' "${headers}" | awk -F': ' 'tolower($1) == "etag" {value=$2} END {print value}')"
           modified="$(printf '%s\n' "${headers}" | awk -F': ' 'tolower($1) == "last-modified" {value=$2} END {print value}')"
-          length="$(printf '%s\n' "${headers}" | awk -F': ' ' 'tolower($1) == "content-length" {value=$2} END {print value}')"
+          length="$(printf '%s\n' "${headers}" | awk -F': ' 'tolower($1) == "content-length" {value=$2} END {print value}')"
           test -n "${etag}" && test -n "${modified}" && test -n "${length}"
           build_id="etag=${etag};last-modified=${modified};content-length=${length}"
           echo "Installer: ${build_id}"
