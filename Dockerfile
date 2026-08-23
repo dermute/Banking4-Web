@@ -43,9 +43,11 @@ RUN if ! getent passwd root >/dev/null; then printf "root:x:0:0:root:/root:/bin/
 COPY --from=installer /TopBanking4Setup.exe /opt/banking4/TopBanking4Setup.exe
 COPY rootfs/ /
 
+# APP_VERSION must not use the installer HTTP ETag: it may contain double quotes
+# and break the base image's JSON web-data response.
 RUN chmod 755 /startapp.sh /etc/cont-init.d/40-validate-web-auth \
     && set-cont-env APP_NAME "Banking4" \
-    && set-cont-env APP_VERSION "Installer ${BANKING4_INSTALLER_ID}" \
+    && set-cont-env APP_VERSION "TopBanking4" \
     && set-cont-env DOCKER_IMAGE_VERSION "${DOCKER_IMAGE_VERSION}" \
     && set-cont-env DISABLE_GLX 1
 
