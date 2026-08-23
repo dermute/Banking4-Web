@@ -8,8 +8,8 @@ set -eu
 export WINEPREFIX="${BANKING4_WINEPREFIX:-/config/wine}"
 export WINEARCH="${WINEARCH:-win32}"
 
-app_path='C:\\Program Files (x86)\\TopBanking4\\TopBanking.exe'
-app_file="${WINEPREFIX}/drive_c/Program Files (x86)/TopBanking4/TopBanking.exe"
+app_path='C:\\Program Files\\TopBanking4\\TopBanking.exe'
+app_file="${WINEPREFIX}/drive_c/Program Files/TopBanking4/TopBanking.exe"
 marker_file="${WINEPREFIX}/.banking4-installer-id"
 required_id="${BANKING4_INSTALLER_ID:-unknown}"
 
