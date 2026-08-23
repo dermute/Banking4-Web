@@ -20,6 +20,10 @@ if [ ! -f "${WINEPREFIX}/system.reg" ]; then
     wineboot --init
 fi
 
+# Wine Mono implements the .NET runtime required by Banking4.  The MSI install
+# is idempotent and registers it with this persistent Wine prefix.
+wine msiexec /i "${BANKING4_WINE_MONO}" /qn
+
 installed_id=""
 if [ -f "${marker_file}" ]; then
     installed_id="$(cat "${marker_file}")"

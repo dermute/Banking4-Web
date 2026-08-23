@@ -4,12 +4,14 @@
 # image build.  The persistent Wine prefix is deliberately kept under /config.
 
 ARG BASEIMAGE_VERSION=ubuntu-24.04-v4
+ARG WINE_MONO_VERSION=11.2.0
 
 FROM --platform=${BUILDPLATFORM} debian:bookworm-slim AS installer
 
 ARG BANKING4_INSTALLER_URL=https://subsembly.com/download/TopBanking4Setup.exe
 # This is a cache key supplied by CI from the HTTP response headers.
 ARG BANKING4_INSTALLER_ID=unknown
+ARG WINE_MONO_VERSION
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl \
@@ -17,6 +19,10 @@ RUN apt-get update \
 
 RUN echo "Downloading Banking4 installer: ${BANKING4_INSTALLER_ID}" \
     && curl --fail --location --retry 3 --output /TopBanking4Setup.exe "${BANKING4_INSTALLER_URL}"
+
+RUN curl --fail --location --retry 3 \
+    --output /wine-mono.msi \
+    "https://dl.winehq.org/wine/wine-mono/${WINE_MONO_VERSION}/wine-mono-${WINE_MONO_VERSION}-x86.msi"
 
 FROM jlesage/baseimage-gui:${BASEIMAGE_VERSION}
 
@@ -41,6 +47,7 @@ RUN if ! getent passwd root >/dev/null; then printf "root:x:0:0:root:/root:/bin/
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=installer /TopBanking4Setup.exe /opt/banking4/TopBanking4Setup.exe
+COPY --from=installer /wine-mono.msi /opt/banking4/wine-mono.msi
 COPY rootfs/ /
 
 # APP_VERSION must not use the installer HTTP ETag: it may contain double quotes
@@ -54,6 +61,7 @@ RUN chmod 755 /startapp.sh /etc/cont-init.d/40-validate-web-auth \
 ENV \
     BANKING4_INSTALLER=/opt/banking4/TopBanking4Setup.exe \
     BANKING4_INSTALLER_ID=${BANKING4_INSTALLER_ID} \
+    BANKING4_WINE_MONO=/opt/banking4/wine-mono.msi \
     BANKING4_WINEPREFIX=/config/wine \
     KEEP_APP_RUNNING=1 \
     SECURE_CONNECTION=1 \
