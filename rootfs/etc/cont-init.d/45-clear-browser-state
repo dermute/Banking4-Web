@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# A wrapper trap clears state on graceful exit. This handles browser data left
+# behind if the container or browser was previously interrupted.
+set -eu
+
+find /tmp -mindepth 1 -maxdepth 1 -type d -name 'banking4-browser-*' \
+    -exec rm -rf -- {} +

@@ -87,6 +87,19 @@ trusted reverse proxy or configure the base image's secure-connection support.
 Do not store passwords in a committed `.env` file; use your deployment
 platform's secrets facility where possible.
 
+## Cloud authentication browser
+
+Banking4 opens cloud-authentication links with [GNOME Web (Epiphany)](https://apps.gnome.org/Epiphany/), a WebKit browser chosen instead of a full Chromium-based browser.
+
+Each authentication window receives a new private Epiphany profile under `/tmp`.
+Its profile, cookies, history, cache, downloads, password store, and other site
+data are deleted as soon as that browser window closes. They are never written to
+`/config`; stale temporary browser directories are also removed whenever the
+container starts.
+
+This means browser login persistence is intentionally unsupported: authenticate
+again when Banking4 needs a new cloud session.
+
 ## Build locally
 
 ```sh

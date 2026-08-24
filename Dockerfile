@@ -33,17 +33,24 @@ USER 0
 
 # Banking4's current installer is a 32-bit Windows executable.  Enable i386
 # before installing Wine so both 32-bit and 64-bit Wine applications work.
+# The base image links /var/log to /config. Epiphany dependencies need a real
+# directory while packages install, so the link is restored after installation.
 RUN if ! getent passwd root >/dev/null; then printf "root:x:0:0:root:/root:/bin/sh\n" >> /etc/passwd; fi \
     && if ! getent group staff >/dev/null; then printf "staff:x:50:\n" >> /etc/group; fi \
+    && mv /var/log /var/log.baseimage \
+    && mkdir /var/log \
     && dpkg --add-architecture i386 \
     && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         cabextract \
+        epiphany-browser \
         fonts-dejavu-core \
         fonts-liberation \
         wine \
         wine32 \
         wine64 \
+    && rm -rf /var/log \
+    && mv /var/log.baseimage /var/log \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=installer /TopBanking4Setup.exe /opt/banking4/TopBanking4Setup.exe
@@ -52,7 +59,8 @@ COPY rootfs/ /
 
 # APP_VERSION must not use the installer HTTP ETag: it may contain double quotes
 # and break the base image's JSON web-data response.
-RUN chmod 755 /startapp.sh /etc/cont-init.d/40-validate-web-auth \
+RUN chmod 755 /startapp.sh /usr/local/bin/banking4-browser \
+        /etc/cont-init.d/40-validate-web-auth /etc/cont-init.d/45-clear-browser-state \
     && set-cont-env APP_NAME "Banking4" \
     && set-cont-env APP_VERSION "TopBanking4" \
     && set-cont-env DOCKER_IMAGE_VERSION "${DOCKER_IMAGE_VERSION}" \

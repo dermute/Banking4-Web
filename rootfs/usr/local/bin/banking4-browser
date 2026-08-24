@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# Run a single private browser instance with every piece of profile state in a
+# unique temporary directory. The directory is removed when Epiphany exits.
+set -eu
+
+browser_root="$(mktemp -d /tmp/banking4-browser.XXXXXX)"
+
+cleanup() {
+    rm -rf -- "${browser_root}"
+}
+
+trap cleanup EXIT
+trap 'exit 1' HUP INT TERM
+
+mkdir -p "${browser_root}/cache" "${browser_root}/config" \
+    "${browser_root}/data" "${browser_root}/downloads" \
+    "${browser_root}/home/Downloads" "${browser_root}/profile" \
+    "${browser_root}/runtime" "${browser_root}/state" "${browser_root}/tmp"
+chmod 700 "${browser_root}/runtime"
+
+export HOME="${browser_root}/home"
+export TMPDIR="${browser_root}/tmp"
+export TMP="${browser_root}/tmp"
+export TEMP="${browser_root}/tmp"
+export XDG_CACHE_HOME="${browser_root}/cache"
+export XDG_CONFIG_HOME="${browser_root}/config"
+export XDG_DATA_HOME="${browser_root}/data"
+export XDG_DOWNLOAD_DIR="${browser_root}/downloads"
+export XDG_RUNTIME_DIR="${browser_root}/runtime"
+export XDG_STATE_HOME="${browser_root}/state"
+
+epiphany --new-window --private-instance --profile="${browser_root}/profile" "$@"
