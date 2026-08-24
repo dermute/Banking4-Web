@@ -20,11 +20,11 @@ the virtual desktop, noVNC, and process supervision.
 
 ## Quick start
 
-Create a `.env` file from the example and set a unique browser password:
+Set a unique browser-login password directly in `docker-compose.yml`, then start
+the container:
 
 ```sh
-cp .env.example .env
-# Edit BANKING4_IMAGE, WEB_AUTHENTICATION_USERNAME, and WEB_AUTHENTICATION_PASSWORD.
+# Edit WEB_AUTHENTICATION_USERNAME and WEB_AUTHENTICATION_PASSWORD first.
 docker compose up -d
 ```
 
@@ -45,7 +45,7 @@ docker run -d \
   -v /docker/appdata/banking4:/config \
   -e WEB_AUTHENTICATION_USERNAME=banking4 \
   -e WEB_AUTHENTICATION_PASSWORD='use-a-long-unique-password' \
-  ghcr.io/<owner>/banking4-web:latest
+  ghcr.io/dermute/banking4-web:latest
 ```
 
 ## Data and updates
