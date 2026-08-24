@@ -27,6 +27,12 @@ wine msiexec /i "${BANKING4_WINE_MONO}" /qn
 # Send Banking4's HTTP and HTTPS links to the stateless browser wrapper.
 wine reg add 'HKCU\Software\Wine\WineBrowser' /v Browsers /t REG_MULTI_SZ /d '/usr/local/bin/banking4-browser' /f
 
+# Set a Windows-compatible short-date pattern when requested. This is stored in
+# the persistent Wine prefix and is applied before Banking4 starts.
+if [ -n "${BANKING4_DATE_FORMAT:-}" ]; then
+    wine reg add 'HKCU\Control Panel\International' /v sShortDate /t REG_SZ /d "${BANKING4_DATE_FORMAT}" /f
+fi
+
 installed_id=""
 if [ -f "${marker_file}" ]; then
     installed_id="$(cat "${marker_file}")"

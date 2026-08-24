@@ -11,6 +11,8 @@ services:
     environment:
       # Timezone, used for the timestamps shown by the miner.
       - TZ=Europe/Berlin
+      # Windows short-date pattern used by Banking4.
+      - BANKING4_DATE_FORMAT=dd.MM.yyyy
       # Owner of the files in /config.
       - USER_ID=1000
       - GROUP_ID=1000

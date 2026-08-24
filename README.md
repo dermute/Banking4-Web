@@ -78,6 +78,7 @@ and continue with the new application version.
 | `WEB_AUTHENTICATION_USERNAME` | Required when enabled | Browser-login username. |
 | `WEB_AUTHENTICATION_PASSWORD` | Required when enabled | Browser-login password. |
 | `TZ` | `Etc/UTC` | Time zone shown by the application. |
+| `BANKING4_DATE_FORMAT` | unset | Windows short-date pattern, e.g. `dd.MM.yyyy`. |
 | `USER_ID` / `GROUP_ID` | `1000` | Ownership of files written to `/config`. |
 | `DISPLAY_WIDTH` / `DISPLAY_HEIGHT` | `1920` / `1080` | Virtual desktop size. |
 | `VNC_PASSWORD` | unset | Optional native-VNC password if port 5900 is published. |
