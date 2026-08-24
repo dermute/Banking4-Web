@@ -43,6 +43,7 @@ RUN if ! getent passwd root >/dev/null; then printf "root:x:0:0:root:/root:/bin/
     && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         cabextract \
+        ca-certificates \
         epiphany-browser \
         fonts-dejavu-core \
         fonts-liberation \

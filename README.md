@@ -92,6 +92,11 @@ platform's secrets facility where possible.
 Banking4 opens cloud-authentication links with [GNOME Web (Epiphany)](https://apps.gnome.org/Epiphany/), a WebKit browser chosen instead of a full Chromium-based browser.
 
 Each authentication window receives a new private Epiphany profile under `/tmp`.
+WebKit's internal process sandbox is disabled only for this browser process.
+This is necessary on Docker hosts that prohibit the user namespaces required by
+Epiphany's nested sandbox. The browser still runs inside the container, but it
+is not a general-purpose browsing environment; access the container only through
+the authenticated HTTPS interface or a trusted VPN.
 Its profile, cookies, history, cache, downloads, password store, and other site
 data are deleted as soon as that browser window closes. They are never written to
 `/config`; stale temporary browser directories are also removed whenever the

@@ -30,4 +30,5 @@ export XDG_DOWNLOAD_DIR="${browser_root}/downloads"
 export XDG_RUNTIME_DIR="${browser_root}/runtime"
 export XDG_STATE_HOME="${browser_root}/state"
 
-epiphany --new-window --private-instance --profile="${browser_root}/profile" "$@"
+WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1 \
+    epiphany --new-window --private-instance --profile="${browser_root}/profile" "$@"
