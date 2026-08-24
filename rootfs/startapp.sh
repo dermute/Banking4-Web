@@ -25,7 +25,7 @@ fi
 wine msiexec /i "${BANKING4_WINE_MONO}" /qn
 
 # Send Banking4's HTTP and HTTPS links to the stateless browser wrapper.
-wine reg add 'HKCU\Software\Wine\WineBrowser' /v Browsers /t REG_SZ /d '/usr/local/bin/banking4-browser' /f
+wine reg add 'HKCU\Software\Wine\WineBrowser' /v Browsers /t REG_MULTI_SZ /d '/usr/local/bin/banking4-browser' /f
 
 installed_id=""
 if [ -f "${marker_file}" ]; then
