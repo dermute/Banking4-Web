@@ -61,7 +61,7 @@ COPY rootfs/ /
 # APP_VERSION must not use the installer HTTP ETag: it may contain double quotes
 # and break the base image's JSON web-data response.
 RUN chmod 755 /startapp.sh /usr/local/bin/banking4-browser \
-        /etc/cont-init.d/40-validate-web-auth /etc/cont-init.d/45-clear-browser-state \
+        /etc/cont-init.d/45-clear-browser-state \
     && set-cont-env APP_NAME "Banking4" \
     && set-cont-env APP_VERSION "TopBanking4" \
     && set-cont-env DOCKER_IMAGE_VERSION "${DOCKER_IMAGE_VERSION}" \

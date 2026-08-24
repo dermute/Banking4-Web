@@ -8,9 +8,10 @@ the virtual desktop, noVNC, and process supervision.
 
 > [!WARNING]
 > Banking4 contains financial information and bank credentials.  Browser
-> authentication is mandatory in this image. Use a long unique password, do
-> not expose port 5800 directly to the internet, and use HTTPS through a
-> reverse proxy or a VPN for any remote access.
+> authentication is enabled by default. Use a long unique password and keep it
+> enabled unless the container is accessible only on a trusted network. Do not
+> expose port 5800 directly to the internet; use HTTPS through a reverse proxy
+> or a VPN for any remote access.
 
 > [!IMPORTANT]
 > This is an independent, unofficial packaging project. It is not affiliated
@@ -28,14 +29,13 @@ the container:
 docker compose up -d
 ```
 
-Open `https://localhost:5800` and sign in using the credentials in `.env`.
+Open `https://localhost:5800` and sign in using the credentials in `docker-compose.yml`.
 The first window is the official Banking4 installation wizard. Complete it in
 the browser; the container then starts Banking4 automatically. The installer
 is interactive because Subsembly does not publish a confirmed unattended
 installation mode.
 
-To use the image without Compose, replace `<owner>` and choose strong
-credentials:
+To use the published image without Compose, choose strong credentials:
 
 ```sh
 docker run -d \
@@ -74,18 +74,19 @@ and continue with the new application version.
 
 | Setting | Required/default | Purpose |
 | --- | --- | --- |
-| `WEB_AUTHENTICATION_USERNAME` | Required | Browser-login username. |
-| `WEB_AUTHENTICATION_PASSWORD` | Required | Browser-login password. |
+| `WEB_AUTHENTICATION` | `1` | Enable browser login; set to `0` only on a trusted network. |
+| `WEB_AUTHENTICATION_USERNAME` | Required when enabled | Browser-login username. |
+| `WEB_AUTHENTICATION_PASSWORD` | Required when enabled | Browser-login password. |
 | `TZ` | `Etc/UTC` | Time zone shown by the application. |
 | `USER_ID` / `GROUP_ID` | `1000` | Ownership of files written to `/config`. |
 | `DISPLAY_WIDTH` / `DISPLAY_HEIGHT` | `1920` / `1080` | Virtual desktop size. |
 | `VNC_PASSWORD` | unset | Optional native-VNC password if port 5900 is published. |
 | `SECURE_CONNECTION` | `1` | Enable the base image's built-in HTTPS support when certificates are configured. |
 
-`WEB_AUTHENTICATION` cannot be disabled. For remote use, terminate TLS at a
-trusted reverse proxy or configure the base image's secure-connection support.
-Do not store passwords in a committed `.env` file; use your deployment
-platform's secrets facility where possible.
+`WEB_AUTHENTICATION` defaults to `1`; set it to `0` to disable the browser login.
+Only disable it when the container is reachable exclusively through a trusted network.
+For remote use, terminate TLS at a trusted reverse proxy or configure the base image's
+secure-connection support.
 
 ## Cloud authentication browser
 
@@ -96,7 +97,7 @@ WebKit's internal process sandbox is disabled only for this browser process.
 This is necessary on Docker hosts that prohibit the user namespaces required by
 Epiphany's nested sandbox. The browser still runs inside the container, but it
 is not a general-purpose browsing environment; access the container only through
-the authenticated HTTPS interface or a trusted VPN.
+HTTPS or a trusted VPN.
 Its profile, cookies, history, cache, downloads, password store, and other site
 data are deleted as soon as that browser window closes. They are never written to
 `/config`; stale temporary browser directories are also removed whenever the
@@ -117,8 +118,7 @@ Windows executable and runs through Wine.
 
 ## Troubleshooting
 
-- **The container immediately exits:** provide both required browser-auth
-  variables and inspect `docker logs banking4-web`.
+- **The container immediately exits:** inspect `docker logs banking4-web`.
 - **The wizard appears again after an update:** finish the wizard rather than
   closing it. The container records the bundled installer identity only after
   the expected Banking4 executable exists.
