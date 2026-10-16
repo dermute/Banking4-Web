@@ -18,7 +18,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  BASE_IMAGE: jlesage/baseimage-gui:ubuntu-24.04-v4
+  BASE_IMAGE: jlesage/baseimage-gui:ubuntu-26.04-v4
   BASE_IMAGE_ID_LABEL: io.github.banking4-web.base-image-id
   INSTALLER_ID_LABEL: io.github.banking4-web.installer-id
   INSTALLER_URL: https://subsembly.com/download/TopBanking4Setup.exe

@@ -3,7 +3,7 @@
 # The Banking4 installer is downloaded unmodified from Subsembly during the
 # image build.  The persistent Wine prefix is deliberately kept under /config.
 
-ARG BASEIMAGE_VERSION=ubuntu-24.04-v4
+ARG BASEIMAGE_VERSION=ubuntu-26.04-v4
 ARG WINE_MONO_VERSION=11.2.0
 
 FROM --platform=${BUILDPLATFORM} debian:bookworm-slim AS installer
@@ -29,10 +29,11 @@ FROM jlesage/baseimage-gui:${BASEIMAGE_VERSION}
 ARG BANKING4_INSTALLER_ID=unknown
 ARG DOCKER_IMAGE_VERSION=
 
-USER 0
+# Set both IDs: the base image creates its passwd/group files at startup.
+USER 0:0
 
-# Banking4's current installer is a 32-bit Windows executable.  Enable i386
-# before installing Wine so both 32-bit and 64-bit Wine applications work.
+# Banking4 uses a 32-bit Wine prefix. Enable i386 and install only wine32:
+# Ubuntu 26.04's wine64 launcher uses WoW64 and rejects win32 prefixes.
 # The base image links /var/log to /config. Epiphany dependencies need a real
 # directory while packages install, so the link is restored after installation.
 RUN if ! getent passwd root >/dev/null; then printf "root:x:0:0:root:/root:/bin/sh\n" >> /etc/passwd; fi \
@@ -49,7 +50,6 @@ RUN if ! getent passwd root >/dev/null; then printf "root:x:0:0:root:/root:/bin/
         fonts-liberation \
         wine \
         wine32 \
-        wine64 \
     && rm -rf /var/log \
     && mv /var/log.baseimage /var/log \
     && rm -rf /var/lib/apt/lists/*

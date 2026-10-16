@@ -55,7 +55,7 @@ All persistent state, including the Wine prefix and Banking4 data, is in
 securely. Do not attach the same directory to more than one running container.
 
 The GitHub Actions workflow checks daily for both the official installer and
-the `linux/amd64` manifest of `jlesage/baseimage-gui:ubuntu-24.04-v4`. It
+the `linux/amd64` manifest of `jlesage/baseimage-gui:ubuntu-26.04-v4`. It
 publishes a new GHCR image only when one of those inputs changes. Each image
 records both input identities as OCI labels.
 
