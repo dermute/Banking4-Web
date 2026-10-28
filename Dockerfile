@@ -48,11 +48,30 @@ RUN if ! getent passwd root >/dev/null; then printf "root:x:0:0:root:/root:/bin/
         epiphany-browser \
         fonts-dejavu-core \
         fonts-liberation \
+        libgl1:i386 \
+        libglx-mesa0:i386 \
+        libgl1-mesa-dri:i386 \
         wine \
         wine32 \
     && rm -rf /var/log \
     && mv /var/log.baseimage /var/log \
     && rm -rf /var/lib/apt/lists/*
+
+# The base image regenerates passwd/group at startup. Preserve the D-Bus
+# account installed by Epiphany: dpkg's statoverride database refers to it,
+# so later package installs fail if the account disappears.
+RUN mkdir -p /etc/cont-groups.d/messagebus /etc/cont-users.d/messagebus \
+        /etc/cont-groups.d/staff \
+    && getent group messagebus | cut -d: -f3 > /etc/cont-groups.d/messagebus/id \
+    && getent passwd messagebus | cut -d: -f3 > /etc/cont-users.d/messagebus/id \
+    && getent passwd messagebus | cut -d: -f4 > /etc/cont-users.d/messagebus/gid \
+    && getent passwd messagebus | cut -d: -f6 > /etc/cont-users.d/messagebus/home \
+    && getent group staff | cut -d: -f3 > /etc/cont-groups.d/staff/id \
+    && test -s /etc/cont-groups.d/messagebus/id \
+    && test -s /etc/cont-users.d/messagebus/id \
+    && test -s /etc/cont-users.d/messagebus/gid \
+    && test -s /etc/cont-users.d/messagebus/home \
+    && test -s /etc/cont-groups.d/staff/id
 
 COPY --from=installer /TopBanking4Setup.exe /opt/banking4/TopBanking4Setup.exe
 COPY --from=installer /wine-mono.msi /opt/banking4/wine-mono.msi
@@ -64,10 +83,13 @@ RUN chmod 755 /startapp.sh /usr/local/bin/banking4-browser \
         /etc/cont-init.d/45-clear-browser-state \
     && set-cont-env APP_NAME "Banking4" \
     && set-cont-env APP_VERSION "TopBanking4" \
-    && set-cont-env DOCKER_IMAGE_VERSION "${DOCKER_IMAGE_VERSION}" \
-    && set-cont-env DISABLE_GLX 1
+    && set-cont-env DOCKER_IMAGE_VERSION "${DOCKER_IMAGE_VERSION}"
 
+# Wine's 32-bit WPF/Direct3D renderer needs GLX and a matching Mesa driver.
+# Use CPU rendering so the virtual desktop does not require a host GPU.
 ENV \
+    DISABLE_GLX=0 \
+    LIBGL_ALWAYS_SOFTWARE=1 \
     BANKING4_INSTALLER=/opt/banking4/TopBanking4Setup.exe \
     BANKING4_INSTALLER_ID=${BANKING4_INSTALLER_ID} \
     BANKING4_WINE_MONO=/opt/banking4/wine-mono.msi \

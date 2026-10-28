@@ -119,6 +119,22 @@ Windows executable and runs through Wine.
 
 ## Troubleshooting
 
+- **Banking4 crashes with `Failed to load libGL` / `Failed to get a GL context`:**
+  the 32-bit Wine renderer needs 32-bit OpenGL libraries and GLX enabled on the
+  virtual desktop. The image includes Mesa software rendering, which does not
+  require a host GPU. Pull the updated GHCR image with `docker compose pull`
+  and recreate the container with `docker compose up -d`. Remove any temporary
+  graphics-related `INSTALL_PACKAGES` entry: the required libraries are bundled
+  in the image. Remove any `DISABLE_GLX=1` override as well.
+  A subsequent `WinDbg was unable to attach` dialog concerns crash reporting;
+  inspect the earlier log messages for the original failure. Preserve `/config`
+  during troubleshooting.
+- **Startup fails with `unknown system group 'messagebus' in statoverride file`:**
+  older images lose the D-Bus account when the base image initializes its users
+  and groups. The updated image preserves the D-Bus account and `staff` group
+  so package-manager ownership references remain valid. Remove the temporary
+  graphics-related `INSTALL_PACKAGES` entry, pull the updated GHCR image, and
+  recreate the container. Your existing `/config` can be retained.
 - **The container immediately exits:** inspect `docker logs banking4-web`.
 - **The wizard appears again after an update:** finish the wizard rather than
   closing it. The container records the bundled installer identity only after
