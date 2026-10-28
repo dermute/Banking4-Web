@@ -89,6 +89,13 @@ Only disable it when the container is reachable exclusively through a trusted ne
 For remote use, terminate TLS at a trusted reverse proxy or configure the base image's
 secure-connection support.
 
+### Window sizes
+
+Banking4 controls its own window sizes. The image disables the base image's
+automatic window maximization because Wine can identify small popups as normal
+windows, causing them to fill the desktop. Window title bars remain available;
+use the maximize button to expand the main window when desired.
+
 ## Cloud authentication browser
 
 Banking4 opens cloud-authentication links with [GNOME Web (Epiphany)](https://apps.gnome.org/Epiphany/), a WebKit browser chosen instead of a full Chromium-based browser.

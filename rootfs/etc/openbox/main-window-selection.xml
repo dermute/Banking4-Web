@@ -1,0 +1,11 @@
+<!--
+  The base image maximizes and removes decorations from every matching window.
+  Wine also exposes some Banking4 popups as normal windows, so matching that
+  type alone expands them to fill the desktop.
+
+  Use an intentionally unmatched class to disable this automatic rule. Let
+  Banking4 choose window sizes and retain title bars for manual maximizing.
+  Keep criteria on separate lines for the base image's selection-file parser.
+-->
+<Type>normal</Type>
+<Class>Banking4WebDisableAutoMaximize</Class>
